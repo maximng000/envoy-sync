@@ -28,6 +28,19 @@ func (r *ValidationResult) Add(key, msg string) {
 	r.Errors = append(r.Errors, ValidationError{Key: key, Message: msg})
 }
 
+// Error returns a combined error string of all validation errors, or empty
+// string if there are none.
+func (r *ValidationResult) Error() string {
+	if r.OK() {
+		return ""
+	}
+	msgs := make([]string, len(r.Errors))
+	for i, e := range r.Errors {
+		msgs[i] = e.Error()
+	}
+	return strings.Join(msgs, "; ")
+}
+
 // ValidateAgainstSchema checks that env satisfies all keys required by schema.
 // schema is typically a .env.example map where values may be empty.
 func ValidateAgainstSchema(env map[string]string, schema map[string]string) ValidationResult {
