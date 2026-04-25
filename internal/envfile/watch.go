@@ -54,7 +54,7 @@ func Watch(path string, interval time.Duration, done <-chan struct{}) (<-chan Wa
 			case <-ticker.C:
 				current, err := fileChecksum(path)
 				if err != nil {
-					ch <- WatchEvent{File: path, Err: err}
+					ch <- WatchEvent{File: path, Err: fmt.Errorf("watch: checksum failed: %w", err)}
 					continue
 				}
 				if current != last {
