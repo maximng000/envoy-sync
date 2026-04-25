@@ -41,6 +41,16 @@ func (r *ValidationResult) Error() string {
 	return strings.Join(msgs, "; ")
 }
 
+// AsError returns nil if there are no validation errors, or a standard error
+// containing all validation messages. This makes it easy to return a
+// ValidationResult directly in error-returning functions.
+func (r *ValidationResult) AsError() error {
+	if r.OK() {
+		return nil
+	}
+	return fmt.Errorf("%s", r.Error())
+}
+
 // ValidateAgainstSchema checks that env satisfies all keys required by schema.
 // schema is typically a .env.example map where values may be empty.
 func ValidateAgainstSchema(env map[string]string, schema map[string]string) ValidationResult {
