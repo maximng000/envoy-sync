@@ -1,40 +1,47 @@
 package envfile
 
-import "fmt"
-
-// DiffSummary holds aggregated statistics about a diff result.
-type DiffSummary struct {
-	Added   int
-	Removed int
-	Changed int
-	Total   int
+// DiffSummaryResult holds aggregated counts from a slice of DiffEntry.
+type DiffSummaryResult struct {
+	Added     int
+	Removed   int
+	Changed   int
+	Unchanged int
+	Total     int
+	HasChanges bool
 }
 
-// String returns a human-readable summary line.
-func (s DiffSummary) String() string {
-	return fmt.Sprintf("total=%d added=%d removed=%d changed=%d",
-		s.Total, s.Added, s.Removed, s.Changed)
+// DiffStatus represents the kind of change in a diff entry.
+type DiffStatus string
+
+const (
+	DiffAdded     DiffStatus = "added"
+	DiffRemoved   DiffStatus = "removed"
+	DiffChanged   DiffStatus = "changed"
+	DiffUnchanged DiffStatus = "unchanged"
+)
+
+// DiffSummaryEntry is a single entry used for summarisation.
+type DiffSummaryEntry struct {
+	Key    string
+	Status DiffStatus
 }
 
-// HasChanges returns true when any difference was detected.
-func (s DiffSummary) HasChanges() bool {
-	return s.Added > 0 || s.Removed > 0 || s.Changed > 0
-}
-
-// SummarizeDiff computes a DiffSummary from a slice of DiffEntry values
-// as returned by Diff.
-func SummarizeDiff(entries []DiffEntry) DiffSummary {
-	var s DiffSummary
+// SummarizeDiff aggregates a slice of DiffSummaryEntry into a DiffSummaryResult.
+func SummarizeDiff(entries []DiffSummaryEntry) DiffSummaryResult {
+	var r DiffSummaryResult
 	for _, e := range entries {
+		r.Total++
 		switch e.Status {
-		case "added":
-			s.Added++
-		case "removed":
-			s.Removed++
-		case "changed":
-			s.Changed++
+		case DiffAdded:
+			r.Added++
+		case DiffRemoved:
+			r.Removed++
+		case DiffChanged:
+			r.Changed++
+		case DiffUnchanged:
+			r.Unchanged++
 		}
 	}
-	s.Total = s.Added + s.Removed + s.Changed
-	return s
+	r.HasChanges = r.Added > 0 || r.Removed > 0 || r.Changed > 0
+	return r
 }
