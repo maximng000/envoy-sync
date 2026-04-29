@@ -4,80 +4,76 @@ import (
 	"testing"
 )
 
-func diffEntries(specs ...struct {
-	key    string
-	status DiffStatus
-}) []DiffSummaryEntry {
-	out := make([]DiffSummaryEntry, 0, len(specs))
-	for _, s := range specs {
-		out = append(out, DiffSummaryEntry{Key: s.key, Status: s.status})
+func diffEntries() []DiffEntry {
+	return []DiffEntry{
+		{Key: "A", Status: "added", NewValue: "1"},
+		{Key: "B", Status: "removed", OldValue: "2"},
+		{Key: "C", Status: "changed", OldValue: "x", NewValue: "y"},
+		{Key: "D", Status: "unchanged", OldValue: "z", NewValue: "z"},
+		{Key: "E", Status: "unchanged", OldValue: "q", NewValue: "q"},
 	}
-	return out
 }
 
 func TestSummarizeDiff_Empty(t *testing.T) {
-	r := SummarizeDiff(nil)
-	if r.Total != 0 || r.HasChanges {
-		t.Errorf("expected empty summary, got %+v", r)
+	s := SummarizeDiff(nil)
+	if s.Total != 0 || s.HasChanges {
+		t.Errorf("expected empty summary, got %+v", s)
 	}
 }
 
 func TestSummarizeDiff_CountsCorrectly(t *testing.T) {
-	entries := []DiffSummaryEntry{
-		{Key: "A", Status: DiffAdded},
-		{Key: "B", Status: DiffRemoved},
-		{Key: "C", Status: DiffChanged},
-		{Key: "D", Status: DiffUnchanged},
-		{Key: "E", Status: DiffAdded},
+	s := SummarizeDiff(diffEntries())
+	if s.Added != 1 {
+		t.Errorf("Added: want 1, got %d", s.Added)
 	}
-	r := SummarizeDiff(entries)
-	if r.Added != 2 {
-		t.Errorf("Added: want 2, got %d", r.Added)
+	if s.Removed != 1 {
+		t.Errorf("Removed: want 1, got %d", s.Removed)
 	}
-	if r.Removed != 1 {
-		t.Errorf("Removed: want 1, got %d", r.Removed)
+	if s.Changed != 1 {
+		t.Errorf("Changed: want 1, got %d", s.Changed)
 	}
-	if r.Changed != 1 {
-		t.Errorf("Changed: want 1, got %d", r.Changed)
+	if s.Unchanged != 2 {
+		t.Errorf("Unchanged: want 2, got %d", s.Unchanged)
 	}
-	if r.Unchanged != 1 {
-		t.Errorf("Unchanged: want 1, got %d", r.Unchanged)
-	}
-	if r.Total != 5 {
-		t.Errorf("Total: want 5, got %d", r.Total)
+	if s.Total != 5 {
+		t.Errorf("Total: want 5, got %d", s.Total)
 	}
 }
 
 func TestSummarizeDiff_HasChanges(t *testing.T) {
-	entries := []DiffSummaryEntry{
-		{Key: "X", Status: DiffChanged},
-	}
-	r := SummarizeDiff(entries)
-	if !r.HasChanges {
+	s := SummarizeDiff(diffEntries())
+	if !s.HasChanges {
 		t.Error("expected HasChanges to be true")
 	}
 }
 
 func TestSummarizeDiff_NoChangesWhenUnchanged(t *testing.T) {
-	entries := []DiffSummaryEntry{
-		{Key: "A", Status: DiffUnchanged},
-		{Key: "B", Status: DiffUnchanged},
+	entries := []DiffEntry{
+		{Key: "A", Status: "unchanged", OldValue: "1", NewValue: "1"},
+		{Key: "B", Status: "unchanged", OldValue: "2", NewValue: "2"},
 	}
-	r := SummarizeDiff(entries)
-	if r.HasChanges {
+	s := SummarizeDiff(entries)
+	if s.HasChanges {
 		t.Error("expected HasChanges to be false")
 	}
-	if r.Total != 2 {
-		t.Errorf("Total: want 2, got %d", r.Total)
+	if s.Unchanged != 2 {
+		t.Errorf("Unchanged: want 2, got %d", s.Unchanged)
 	}
 }
 
-func TestSummarizeDiff_OnlyRemoved(t *testing.T) {
-	entries := []DiffSummaryEntry{
-		{Key: "GONE", Status: DiffRemoved},
+func TestSummarizeDiff_OnlyAdded(t *testing.T) {
+	entries := []DiffEntry{
+		{Key: "X", Status: "added", NewValue: "v1"},
+		{Key: "Y", Status: "added", NewValue: "v2"},
 	}
-	r := SummarizeDiff(entries)
-	if r.Removed != 1 || !r.HasChanges {
-		t.Errorf("unexpected result: %+v", r)
+	s := SummarizeDiff(entries)
+	if s.Added != 2 {
+		t.Errorf("Added: want 2, got %d", s.Added)
+	}
+	if !s.HasChanges {
+		t.Error("expected HasChanges true")
+	}
+	if s.Total != 2 {
+		t.Errorf("Total: want 2, got %d", s.Total)
 	}
 }
